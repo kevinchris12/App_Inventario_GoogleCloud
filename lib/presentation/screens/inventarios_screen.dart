@@ -1,0 +1,95 @@
+import 'package:app_inventario/presentation/widgets/ultimo_inventario.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logic/navigation/navigation_bloc.dart';
+import '../../logic/inventario/inventario_bloc.dart';
+import '../../logic/inventario/inventario_state.dart';
+import '../../logic/inventario/inventario_event.dart';
+import '../../logic/producto/producto_bloc.dart';
+import '../widgets/inventarios_paginados.dart';
+import '../../services/inventario_producto_coordinator.dart';
+
+class InventariosScreen extends StatelessWidget {
+  const InventariosScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    final coordinator = InventarioProductoCoordinator(
+      context.read<InventarioBloc>(),
+      context.read<ProductoBloc>(),
+      context.read<NavigationBloc>(),
+    );
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.black, size: 30),
+                onPressed: () {
+                  context.read<InventarioBloc>().add(
+                    CargarUltimosTresInventarios(),
+                  );
+
+                  coordinator.inventarioScreenCoordinador();
+                },
+              ),
+            ],
+          ),
+          BlocBuilder<InventarioBloc, InventarioState>(
+            buildWhen: (prev, curr) =>
+                prev.ultimoInventarioVacio != curr.ultimoInventarioVacio ||
+                prev.ultimoInventarioCargando !=
+                    curr.ultimoInventarioCargando ||
+                prev.ultimoInventarioCargado != curr.ultimoInventarioCargado,
+            builder: (context, state) {
+              return UltimoInventario(state: state);
+            },
+          ),
+          SizedBox(height: screenHeight * 0.005),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Todos los inventarios existentes ',
+                  style: TextStyle(
+                    color: Color(0xFF4662B2),
+                    fontSize: screenWidth * 0.035,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                TextSpan(
+                  text: 'se mostrarán aquí.',
+                  style: TextStyle(
+                    color: Color(0xFF000000),
+                    fontSize: screenWidth * 0.035,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.02),
+          BlocBuilder<InventarioBloc, InventarioState>(
+            buildWhen: (prev, curr) =>
+                prev.inventariosPaginadosVacios !=
+                    curr.inventariosPaginadosVacios ||
+                prev.inventariosPaginadosCargando !=
+                    curr.inventariosPaginadosCargando ||
+                prev.inventariosPaginadosCargados !=
+                    curr.inventariosPaginadosCargados ||
+                prev.modoSeleccion != curr.modoSeleccion ||
+                prev.inventariosSeleccionados != curr.inventariosSeleccionados,
+            builder: (context, state) {
+              return InventariosPaginadosWidget(state: state);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
